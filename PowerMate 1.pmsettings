@@ -1,0 +1,56 @@
+<PowerMateDoc>
+  <device name="PowerMate 1">
+    <settings>
+      <lastpath>\\?\hid#vid_077d&amp;pid_0410#6&amp;67de2e5&amp;0&amp;0000#{4d1e55b2-f16f-11cf-88cb-001111000030}</lastpath>
+    </settings>
+    <app image="python" name="python">
+      <settings>
+        <iconPath>C:\Python27\python.exe</iconPath>
+      </settings>
+      <action pmaction="ClockwiseRotate" caction="Send Keys" plugin="Send Keys">
+        <panel>
+          <string>Right</string>
+        </panel>
+        <settings>
+          <sensitivity>0</sensitivity>
+        </settings>
+      </action>
+      <action pmaction="CounterClockwiseRotate" caction="Send Keys" plugin="Send Keys">
+        <panel>
+          <string>Left</string>
+        </panel>
+      </action>
+      <action pmaction="Click" caction="Send Keys" plugin="Send Keys">
+        <panel>
+          <string>Space</string>
+        </panel>
+        <settings>
+          <description>Simulates Keystrokes</description>
+        </settings>
+      </action>
+    </app>
+    <app name="Global Setting">
+      <action pmaction="Click" caction="Send Keys" plugin="Send Keys">
+        <panel>
+          <string>Win+B, Enter</string>
+        </panel>
+        <settings>
+          <description>Simulates Keystrokes</description>
+        </settings>
+      </action>
+      <action pmaction="ClockwiseRotate" caction="Send Keys" plugin="Send Keys">
+        <panel>
+          <string>Win+B</string>
+        </panel>
+      </action>
+      <action pmaction="CounterClockwiseRotate" caction="Send Keys" plugin="Send Keys">
+        <settings>
+          <description>Simulates Keystrokes</description>
+        </settings>
+        <panel>
+          <string>Enter</string>
+        </panel>
+      </action>
+    </app>
+  </device>
+</PowerMateDoc>
