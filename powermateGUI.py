@@ -16,28 +16,63 @@ class Window(QtGui.QMainWindow):
         super(Window, self).__init__()
         self.main_widget = QtGui.QWidget(self)
         #self.grid = QtGui.QGridLayout(self.main_widget)
-        #self.main_widget.setStyleSheet("background-color:black;");
-        self.main_widget.resize(800, 500)
-        #self.setCentralWidget(self.main_widget)
-
-
-        self.vbox = QtGui.QVBoxLayout()
-
-
+        #self.main_widget.resize(800, 500)
+        self.setCentralWidget(self.main_widget)
+        self.main_widget.setStyleSheet("background-color:white;");
+        
+        self.setStyleSheet("""
+        * {
+            background-color:white;
+        }
+        .QWidget {
+            border: 0px solid black;
+            background-color: white;
+            }
             
+        .QLabel {
+            font-size: 20px;
+            font-family:calibri;
+            background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #eef, stop: 1 #ccf);
+        }
+        .QGroupBox {
+            border-radius: 10px;
+        }
+        """)
+
+        ### Labels
+        layout = QtGui.QVBoxLayout(self.main_widget)
+        self.customer_label = QtGui.QLabel('No customer')
+        self.task_label = QtGui.QLabel('No task')
+        self.time_label = QtGui.QLabel('No session')
+
+        layout.addWidget(self.customer_label)
+        layout.addWidget(self.task_label)
+        layout.addWidget(self.time_label)
+        
+                # Listings
+
+        self.vbox = QtGui.QVBoxLayout()            
         mygroupbox = QtGui.QGroupBox()
         mygroupbox.setLayout(self.vbox)
-        #mygroupbox.setGeometry(300, 300, 650, 300)
 
-        scroll = QtGui.QScrollArea()
+        
+        scroll = MyScrollArea(self)
+        scroll.setWindow(self)
         scroll.setWidget(mygroupbox)
         scroll.setWidgetResizable(True)
-        #scroll.setFixedHeight(400)
-        #scroll.setGeometry(300, 300, 650, 300)
+        scroll.setStyleSheet("""
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            padding:0px;
+        """)
 
-        layout = QtGui.QVBoxLayout(self.main_widget)
+        
+        self.scroll_bar = scroll.verticalScrollBar()
+        #self.scroll_bar.hide()
+        #self.scroll_bar.parent().hide()
+
         layout.addWidget(scroll)
-
             
         ### systray
         self.sysTray = QtGui.QSystemTrayIcon(self)
@@ -67,14 +102,14 @@ class Window(QtGui.QMainWindow):
         
         ## Start with customer list
         self.populate_customers()
-        #self.populate_tasks()
-        #self.hide_tasks()
+        self.populate_tasks()
+        self.hide_tasks()
         
         
         self.initUI()
         
     def initUI(self):
-        self.setGeometry(200, 200, 850, 500)
+        self.setGeometry(100, 100, 850, 500)
         self.setWindowTitle("Koho")
         exit_action = QtGui.QAction(QtGui.QIcon('./exit.png'), '&Exit', self)
         exit_action.setShortcut('Ctrl+Q')
@@ -90,28 +125,30 @@ class Window(QtGui.QMainWindow):
         self.activateWindow()
         self.raise_()
         self.show()  
+        
+        
     ### Listener   
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Right:
-            print 'Right'
+            #print 'Right'
             self.nextValue()
         elif event.key() == QtCore.Qt.Key_Left:
-            print 'Left'
+            #print 'Left'
             self.previousValue()
         elif event.key() == QtCore.Qt.Key_Up:
-            print 'Up'
+            #print 'Up'
             self.previousValue()
         elif event.key() == QtCore.Qt.Key_Down:
-            print 'Down'
+            #print 'Down'
             self.nextValue()
         elif event.key() == QtCore.Qt.Key_Enter:
-            print 'Enter'
+            #print 'Enter'
             self.select()
         elif event.key() == QtCore.Qt.Key_Return:
-            print 'Enter'
+            #print 'Enter'
             self.select()
         elif event.key() == QtCore.Qt.Key_Space:
-            print 'Space'  
+            #print 'Space'  
             self.select()
                       
         #else:
@@ -137,12 +174,37 @@ class Window(QtGui.QMainWindow):
             self.hide_customers()
             self.show_tasks()
         elif self.state == 'task':
+            self.start_session()
             self.state = 'customer'
             self.start_time = datetime.datetime.now()
             self.hide_tasks()
             self.show_customers()
             #self.windowToTray()    
+            #self.showMinimized()
+            
+    def start_session(self):
+        self.customer_label.setText(self.lista[self.current_employer])  
+        self.task_label.setText(self.hommat[0][self.current_task])  
 
+    def move(self, steps):
+        if self.state == 'customer':
+            self.buttons[self.current_employer].inactivate()
+            if self.current_employer < len(self.lista) - 1:
+                self.current_employer = self.current_employer + steps
+            else:
+                self.current_employer = 0
+            self.buttons[self.current_employer].activate()
+            
+            self.scroll_bar.setValue(self.buttons[self.current_employer].pos().y() - 200)
+
+        elif self.state == 'task':
+            self.taskbuttons[self.current_task].inactivate()
+            if self.current_task < len(self.hommat[0]) - 1:
+                self.current_task = self.current_task + steps
+            else:
+                self.current_task = 0
+            self.taskbuttons[self.current_task].activate()
+            
     def nextValue(self):
         if self.state == 'customer':
             self.buttons[self.current_employer].inactivate()
@@ -151,6 +213,9 @@ class Window(QtGui.QMainWindow):
             else:
                 self.current_employer = 0
             self.buttons[self.current_employer].activate()
+            
+            self.scroll_bar.setValue(self.buttons[self.current_employer].pos().y() - 200)
+
         elif self.state == 'task':
             self.taskbuttons[self.current_task].inactivate()
             if self.current_task < len(self.hommat[0]) - 1:
@@ -162,12 +227,15 @@ class Window(QtGui.QMainWindow):
     
     def previousValue(self):
         if self.state == 'customer':
-            self.buttons[self.current_employer].setStyleSheet("background-color: green")
+            self.buttons[self.current_employer].inactivate()
             if self.current_employer == 0:
                 self.current_employer = len(self.lista) - 1
             else:
                 self.current_employer = self.current_employer - 1
-                self.buttons[self.current_employer].setStyleSheet("background-color: red")
+                self.buttons[self.current_employer].activate()
+            self.scroll_bar.setValue(self.buttons[self.current_employer].pos().y()-200)
+
+
         if self.state == 'task':
             self.taskbuttons[self.current_task].inactivate()
             if self.current_task == 0:
@@ -192,7 +260,7 @@ class Window(QtGui.QMainWindow):
         for item in self.hommat[0]:
             mypushbutton = MyPushButton()
             mypushbutton.setText(item)
-            self.grid.addWidget(mypushbutton)
+            self.vbox.addWidget(mypushbutton)
             self.taskbuttons.append(mypushbutton)
         
         self.taskbuttons[self.current_task].activate()
@@ -216,18 +284,47 @@ class Window(QtGui.QMainWindow):
 
     def tick(self):
         if self.start_time != NULL:
-            print datetime.datetime.now() - self.start_time
+            seconds = datetime.datetime.now() - self.start_time
+            m, s = divmod(seconds.total_seconds(), 60)
+            h, m = divmod(m, 60)
+            time = "%d:%02d:%02d" % (h, m, s)
+            self.time_label.setText(time)
 
+class MyScrollArea(QtGui.QScrollArea):
+    
+    def setWindow(self, window):
+        self.window = window
+        
+    def keyPressEvent(self, event):
+        self.window.keyPressEvent(event)
+    
+    def wheelEvent(self, event):
+        print event.delta()
+        event.ignore()
+        
 class MyPushButton(QtGui.QPushButton):
     def __init__(self):
         QtGui.QPushButton.__init__(self)
-        self.setStyleSheet("background-color: green")
+        #self.setStyleSheet("background-color: green;")
+        self.inactivate()
         
     def activate(self):
-        self.setStyleSheet("background-color: red")
+        self.setStyleSheet("""
+            background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #fefffe, stop: 1 #cdc);
+            border-radius: 5px;
+            height:30px;
+            border: 1px solid #ddd;
+        """)
 
     def inactivate(self):
-        self.setStyleSheet("background-color: green")
+        self.setStyleSheet("""
+            background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #fefefe, stop: 1 #ccc);
+            border-radius: 5px;
+            height:30px;
+            border: 1px solid #ddd;
+
+        """)
+
 
 
 app = QtGui.QApplication(sys.argv)
