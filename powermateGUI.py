@@ -15,15 +15,28 @@ class Window(QtGui.QMainWindow):
         
         super(Window, self).__init__()
         self.main_widget = QtGui.QWidget(self)
-        self.grid = QtGui.QGridLayout(self.main_widget)
+        #self.grid = QtGui.QGridLayout(self.main_widget)
+        #self.main_widget.setStyleSheet("background-color:black;");
+        self.main_widget.resize(800, 500)
+        #self.setCentralWidget(self.main_widget)
 
-        #scroll area
-        self.scroll = QtGui.QScrollArea()
-        #scroll.setWidget(self.grid)
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setFixedHeight(400)
-        self.grid.addWidget(self.scroll)
-        self.setCentralWidget(self.main_widget)
+
+        self.vbox = QtGui.QVBoxLayout()
+
+
+            
+        mygroupbox = QtGui.QGroupBox()
+        mygroupbox.setLayout(self.vbox)
+        #mygroupbox.setGeometry(300, 300, 650, 300)
+
+        scroll = QtGui.QScrollArea()
+        scroll.setWidget(mygroupbox)
+        scroll.setWidgetResizable(True)
+        #scroll.setFixedHeight(400)
+        #scroll.setGeometry(300, 300, 650, 300)
+
+        layout = QtGui.QVBoxLayout(self.main_widget)
+        layout.addWidget(scroll)
 
             
         ### systray
@@ -54,12 +67,29 @@ class Window(QtGui.QMainWindow):
         
         ## Start with customer list
         self.populate_customers()
-        self.populate_tasks()
-        self.hide_tasks()
+        #self.populate_tasks()
+        #self.hide_tasks()
         
         
         self.initUI()
-    
+        
+    def initUI(self):
+        self.setGeometry(200, 200, 850, 500)
+        self.setWindowTitle("Koho")
+        exit_action = QtGui.QAction(QtGui.QIcon('./exit.png'), '&Exit', self)
+        exit_action.setShortcut('Ctrl+Q')
+        exit_action.triggered.connect(QtGui.qApp.quit)
+        menubar = self.menuBar()
+        file_menu = menubar.addMenu('&File')
+        file_menu.addAction(exit_action)     
+        
+        self.show()
+        
+        #focus and bring front
+        self.setFocus(True)
+        self.activateWindow()
+        self.raise_()
+        self.show()  
     ### Listener   
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Right:
@@ -147,23 +177,7 @@ class Window(QtGui.QMainWindow):
                 self.taskbuttons[self.current_task].activate()
         
     
-    def initUI(self):
-        self.setGeometry(300, 300, 650, 300)
-        self.setWindowTitle("Koho")
-        exit_action = QtGui.QAction(QtGui.QIcon('./exit.png'), '&Exit', self)
-        exit_action.setShortcut('Ctrl+Q')
-        exit_action.triggered.connect(QtGui.qApp.quit)
-        menubar = self.menuBar()
-        file_menu = menubar.addMenu('&File')
-        file_menu.addAction(exit_action)     
-        
-        self.show()
-        
-        #focus and bring front
-        self.setFocus(True)
-        self.activateWindow()
-        self.raise_()
-        self.show()
+
 
 
     def hide_tasks(self):
@@ -195,7 +209,7 @@ class Window(QtGui.QMainWindow):
         for item in self.lista:
             mypushbutton = MyPushButton()
             mypushbutton.setText(item)
-            self.grid.addWidget(mypushbutton)
+            self.vbox.addWidget(mypushbutton)
             self.buttons.append(mypushbutton)
                 
         self.buttons[self.current_employer].activate()
