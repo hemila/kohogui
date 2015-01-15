@@ -2,25 +2,34 @@ from PyQt4 import QtGui, QtCore
 import sys
 
 import json
+import datetime
+from objc._objc import NULL
 
 
 
 class Window(QtGui.QMainWindow):
     
+    
+    ## init
     def __init__(self):
+        
         super(Window, self).__init__()
         self.main_widget = QtGui.QWidget(self)
         self.grid = QtGui.QGridLayout(self.main_widget)
+
+        #scroll area
+        self.scroll = QtGui.QScrollArea()
+        #scroll.setWidget(self.grid)
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setFixedHeight(400)
+        self.grid.addWidget(self.scroll)
         self.setCentralWidget(self.main_widget)
 
-
-        
-        
+            
+        ### systray
         self.sysTray = QtGui.QSystemTrayIcon(self)
         self.sysTray.setIcon( QtGui.QIcon('koho.png') )
         self.connect(self.sysTray, QtCore.SIGNAL("activated(QSystemTrayIcon::ActivationReason)"), self.__icon_activated)
-
-   
 
         json1_file = open('tehtavat.json')
         json1_str = json1_file.read()
@@ -29,122 +38,115 @@ class Window(QtGui.QMainWindow):
         self.lista = json1_data.keys()
         self.lista.sort()
 
-        employers = ""
-        for item in self.lista:
-            employers = employers + item + ' \n'
+        #### Timer
+        self.my_timer = QtCore.QTimer()
+        self.my_timer.timeout.connect(self.tick)
+        self.my_timer.start(1000) #1 second interval
 
-        
-        
+        #### Internal variables
         self.current_employer = 0
         self.current_task = 0
-        
         self.hommat = json1_data.values()
-        
-        
         self.state = "customer"
-        
         self.buttons = []
         self.taskbuttons = []
+        self.start_time = NULL
         
-        
-        for item in self.lista:
-            mypushbutton = MyPushButton()
-            mypushbutton.setText(item)
-            mypushbutton.setStyleSheet("background-color: green")
-            self.grid.addWidget(mypushbutton)
-            self.buttons.append(mypushbutton)
-        
-        self.connect(self.grid, QtCore.SIGNAL("RightPressed"), self.nextValue)
-        self.connect(self.buttons[0], QtCore.SIGNAL("LeftPressed"), self.previousValue)
-        self.connect(self.buttons[0], QtCore.SIGNAL("clicked()"), self.rollClickedEmployer)
-        
-        
-        self.buttons[0].setStyleSheet("background-color: red")
-        
-        for item in self.hommat[0]:
-            mypushbutton = MyPushButton()
-            mypushbutton.setText(item)
-            mypushbutton.setStyleSheet("background-color: green")
-            mypushbutton.setVisible(False)
-            self.grid.addWidget(mypushbutton)
-            self.taskbuttons.append(mypushbutton)
-         
-        for item in self.taskbuttons:
-            self.connect(item, QtCore.SIGNAL("clicked()"), self.rollClickedTask) 
+        ## Start with customer list
+        self.populate_customers()
+        self.populate_tasks()
+        self.hide_tasks()
         
         
         self.initUI()
     
+    ### Listener   
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Right:
+            print 'Right'
+            self.nextValue()
+        elif event.key() == QtCore.Qt.Key_Left:
+            print 'Left'
+            self.previousValue()
+        elif event.key() == QtCore.Qt.Key_Up:
+            print 'Up'
+            self.previousValue()
+        elif event.key() == QtCore.Qt.Key_Down:
+            print 'Down'
+            self.nextValue()
+        elif event.key() == QtCore.Qt.Key_Enter:
+            print 'Enter'
+            self.select()
+        elif event.key() == QtCore.Qt.Key_Return:
+            print 'Enter'
+            self.select()
+        elif event.key() == QtCore.Qt.Key_Space:
+            print 'Space'  
+            self.select()
+                      
+        #else:
+        #    print event.key()
+        
+        #event.accept() #stops propagation
+        #event.ignore() #will propagate
     
     def __icon_activated(self, reason):
         if reason == QtGui.QSystemTrayIcon.Trigger:
             self.show()
             self.sysTray.setVisible(False)
-        self.setState()
-    
-    
-    def setState(self):
-        print "setState started"
-        if self.state == "customer":
-            
-            self.grid = QtGui.QGridLayout(self.main_widget)
-            self.buttons = []
-            for item in self.lista:
-                mypushbutton = MyPushButton()
-                mypushbutton.setText(item)
-                mypushbutton.setStyleSheet("background-color: green")
-                self.grid.addWidget(mypushbutton)
-                self.buttons.append(mypushbutton)
-            self.buttons[0].setStyleSheet("background-color: red")
-            self.connect(self.buttons[0], QtCore.SIGNAL("RightPressed"), self.nextValue)
-            self.connect(self.buttons[0], QtCore.SIGNAL("LeftPressed"), self.previousValue)
-            self.connect(self.buttons[0], QtCore.SIGNAL("clicked()"), self.rollClickedEmployer)
-            print "connects made"
     
     
     def windowToTray(self):
         self.sysTray.setVisible(True)
         self.hide()
         
-        
     
-    def rollClickedEmployer(self):
-        for item in self.buttons:
-            item.setVisible(False)
-        for item in self.taskbuttons:
-            item.setVisible(True)
-        #self.disconnect(self.buttons[0], QtCore.SIGNAL("RightPressed"), self.nextValue)
-            
-    
-    def rollClickedTask(self):
-        for item in self.taskbuttons:
-            item.setVisible(False)
-       
-        #self.connect(self.buttons[0], QtCore.SIGNAL("RightPressed"), self.nextValue)
-        self.setState()
-        #self.windowToTray()
-    
+    def select(self):
+        if self.state == 'customer':
+            self.state = 'task'
+            self.hide_customers()
+            self.show_tasks()
+        elif self.state == 'task':
+            self.state = 'customer'
+            self.start_time = datetime.datetime.now()
+            self.hide_tasks()
+            self.show_customers()
+            #self.windowToTray()    
 
     def nextValue(self):
-        self.buttons[self.current_employer].setStyleSheet("background-color: green")
-        if self.current_employer < len(self.lista) - 1:
-            self.current_employer = self.current_employer + 1
-        else:
-            self.current_employer = 0
-        self.buttons[self.current_employer].setStyleSheet("background-color: red")
-        print "nextValue triggered"
-    
+        if self.state == 'customer':
+            self.buttons[self.current_employer].inactivate()
+            if self.current_employer < len(self.lista) - 1:
+                self.current_employer = self.current_employer + 1
+            else:
+                self.current_employer = 0
+            self.buttons[self.current_employer].activate()
+        elif self.state == 'task':
+            self.taskbuttons[self.current_task].inactivate()
+            if self.current_task < len(self.hommat[0]) - 1:
+                self.current_task = self.current_task + 1
+            else:
+                self.current_task = 0
+            self.taskbuttons[self.current_task].activate()
+        
     
     def previousValue(self):
-        self.buttons[self.current_employer].setStyleSheet("background-color: green")
-        if self.current_employer == 0:
-            self.current_employer = len(self.lista) - 1
-        else:
-            self.current_employer = self.current_employer - 1
-        self.buttons[self.current_employer].setStyleSheet("background-color: red")
+        if self.state == 'customer':
+            self.buttons[self.current_employer].setStyleSheet("background-color: green")
+            if self.current_employer == 0:
+                self.current_employer = len(self.lista) - 1
+            else:
+                self.current_employer = self.current_employer - 1
+                self.buttons[self.current_employer].setStyleSheet("background-color: red")
+        if self.state == 'task':
+            self.taskbuttons[self.current_task].inactivate()
+            if self.current_task == 0:
+                self.current_task = len(self.hommat[0]) - 1
+            else:
+                self.current_task = self.current_task - 1
+                self.taskbuttons[self.current_task].activate()
+        
     
-    
-
     def initUI(self):
         self.setGeometry(300, 300, 650, 300)
         self.setWindowTitle("Koho")
@@ -156,42 +158,63 @@ class Window(QtGui.QMainWindow):
         file_menu.addAction(exit_action)     
         
         self.show()
+        
+        #focus and bring front
+        self.setFocus(True)
+        self.activateWindow()
+        self.raise_()
+        self.show()
 
 
+    def hide_tasks(self):
+        for item in self.taskbuttons:
+            item.setVisible(False)
 
-    def event(self, event):
-        if (event.type()== QtCore.QEvent.KeyPress) and (event.key()== QtCore.Qt.Key_Right):
-            self.emit(QtCore.SIGNAL("RightPressed"))
-            print "right pressed"
-            return True
-        if (event.type()== QtCore.QEvent.KeyPress) and (event.key()== QtCore.Qt.Key_Left):
-            self.emit(QtCore.SIGNAL("LeftPressed"))
-            return True
-        if (event.type()== QtCore.QEvent.KeyPress) and (event.key()== QtCore.Qt.Key_Space):
-            self.emit(QtCore.SIGNAL("SpacePressed"))
-            return True
-        return QtGui.QMainWindow.event(self, event)
-    
+    def show_tasks(self):
+        for item in self.taskbuttons:
+            item.setVisible(True)
 
+    def populate_tasks(self):
+        for item in self.hommat[0]:
+            mypushbutton = MyPushButton()
+            mypushbutton.setText(item)
+            self.grid.addWidget(mypushbutton)
+            self.taskbuttons.append(mypushbutton)
+        
+        self.taskbuttons[self.current_task].activate()
+
+    def hide_customers(self):
+        for item in self.buttons:
+            item.setVisible(False)
+
+    def show_customers(self):
+        for item in self.buttons:
+            item.setVisible(True)
+            
+    def populate_customers(self):
+        for item in self.lista:
+            mypushbutton = MyPushButton()
+            mypushbutton.setText(item)
+            self.grid.addWidget(mypushbutton)
+            self.buttons.append(mypushbutton)
+                
+        self.buttons[self.current_employer].activate()
+
+    def tick(self):
+        if self.start_time != NULL:
+            print datetime.datetime.now() - self.start_time
 
 class MyPushButton(QtGui.QPushButton):
     def __init__(self):
         QtGui.QPushButton.__init__(self)
+        self.setStyleSheet("background-color: green")
         
-        
-    def event(self, event):
-        if (event.type()== QtCore.QEvent.KeyPress) and (event.key()== QtCore.Qt.Key_Right):
-            self.emit(QtCore.SIGNAL("RightPressed"))
-            #print "right pressed"
-            return True
-        if (event.type()== QtCore.QEvent.KeyPress) and (event.key()== QtCore.Qt.Key_Left):
-            self.emit(QtCore.SIGNAL("LeftPressed"))
-            return True
-        if (event.type()== QtCore.QEvent.KeyPress) and (event.key()== QtCore.Qt.Key_Space):
-            self.emit(QtCore.SIGNAL("SpacePressed"))
-            return True
-        return QtGui.QPushButton.event(self, event)    
-        
+    def activate(self):
+        self.setStyleSheet("background-color: red")
+
+    def inactivate(self):
+        self.setStyleSheet("background-color: green")
+
 
 app = QtGui.QApplication(sys.argv)
 window = Window()
