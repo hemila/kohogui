@@ -129,12 +129,13 @@ class Window(QtGui.QMainWindow):
         #### Internal variables
         self.current_employer = 0
         self.current_task = 0
+        print json1_data
         self.hommat = json1_data.values()
         self.state = "customer"
         self.buttons = []
         self.taskbuttons = []
         self.start_time = None
-
+        self.wait = None
         ## Start with customer list
         self.populate_customers()
         self.populate_tasks()
@@ -143,8 +144,11 @@ class Window(QtGui.QMainWindow):
         
         self.initUI()
         
+    def centerWindow(self):
+        self.setGeometry(500, 200, 450, 400)
+        
     def initUI(self):
-        self.setGeometry(100, 100, 350, 400)
+        self.centerWindow()
         self.setWindowTitle("Koho")
         exit_action = QtGui.QAction(QtGui.QIcon('./exit.png'), '&Exit', self)
         exit_action.setShortcut('Ctrl+Q')
@@ -168,9 +172,22 @@ class Window(QtGui.QMainWindow):
     def mousePressEvent(self, event):
         if self.state == 'background':
             self.resume()
-     
+
+    def waiting(self):
+        if self.wait == None:
+            return False
+        return self.wait > datetime.datetime.now()
+
+    
+    def setWait(self):
+        self.wait = datetime.datetime.now()  + datetime.timedelta(seconds=1.5)
+
+
     def keyPressEvent(self, event):
         print self.state
+        if self.waiting():
+            return
+        
         if self.state == 'background':
             self.resume()
         else:
@@ -244,7 +261,7 @@ class Window(QtGui.QMainWindow):
             self.send_to_background()
             #self.windowToTray()    
             #self.showMinimized()
-            
+
         self.focus_selected()
         
     def resume(self):
@@ -254,18 +271,18 @@ class Window(QtGui.QMainWindow):
         self.scroll.show()
         self.set_open()
         self.show_customers()
-        self.setGeometry(100, 100, 350, 400)
-
+        self.centerWindow()
+        #self.setWait()
         
     def send_to_background(self):
         self.state = 'background'
-        self.setGeometry(1080, 740, 200, 60)
+        self.setGeometry(1150, 650, 200, 70)
         self.mygroupbox.hide()
         self.search.hide()
         self.scroll.hide()
         self.set_closed()
-
-
+        self.setWait()
+        self.tick()
 
 
     def set_open(self):
@@ -280,7 +297,7 @@ class Window(QtGui.QMainWindow):
         self.main_widget.setStyleSheet("""
         #main{
             background-color:white;
-            max-height:60px;
+            max-height:70px;
         }
         """); 
 
@@ -289,13 +306,15 @@ class Window(QtGui.QMainWindow):
         self.customer_name = ''
         self.task_name = ''
         self.start_time = None
+        self.tick()
+        self.search.setText('')
 
         
     def start_session(self):
         self.customer_name = self.lista[self.current_employer]
         self.task_name = self.hommat[0][self.current_task]
         self.start_time = datetime.datetime.now()
-
+        self.tick()
 
     def filter(self):
         query = self.search.text().toLower()
@@ -329,10 +348,10 @@ class Window(QtGui.QMainWindow):
         
     def focus_selected(self):
         if self.state == 'customer':
-            self.scroll_bar.setValue(self.buttons[self.current_employer].pos().y() - 100)
+            self.scroll_bar.setValue(self.buttons[self.current_employer].pos().y() - 130)
 
         elif self.state == 'task':
-            self.scroll_bar.setValue(self.buttons[self.current_task].pos().y() - 100)        
+            self.scroll_bar.setValue(self.buttons[self.current_task].pos().y() - 130)        
 
     def move(self, steps):
         print steps
@@ -364,6 +383,7 @@ class Window(QtGui.QMainWindow):
             item.setVisible(True)
 
     def populate_tasks(self):
+        print self.hommat
         for item in self.hommat[0]:
             mypushbutton = MyPushButton()
             mypushbutton.setText(item)

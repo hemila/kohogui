@@ -1,15 +1,14 @@
 {
   "ARK-ASIAKAS": [
-    "Graafinen suunnittelu",
-    "Markkinointikampanjan suunnittelu",
-    "Projektityö",
-    "Verkkosivujen kehitystyö",
-    "Sopimuksen alainen työ",
-    "Siivous viikonloppu",
-    "Kokous",
-    "Projektityö",
-    "Isännöitsijän tuntiveloitus"
-  ],
+    "Ei laskutettava asiakastyö",
+    "Erillislaskutettava kirjanpito",
+    "Myyntireskontratyö",
+    "Ostoreskontratyö",
+    "Palkanlaskenta",
+    "Tilinpäätös",
+    "Veroilmoitus" 
+   ]
+   ,
   "AS. Oy Helsinki": [
     "Graafinen suunnittelu",
     "Markkinointikampanjan suunnittelu",
@@ -22,16 +21,14 @@
     "Isännöitsijän tuntiveloitus"
   ],
   "Berkshire Hathaway": [
-    "Graafinen suunnittelu",
-    "Markkinointikampanjan suunnittelu",
-    "Projektityö",
-    "Verkkosivujen kehitystyö",
-    "Sopimuksen alainen työ",
-    "Siivous viikonloppu",
-    "Kokous",
-    "Projektityö",
-    "Isännöitsijän tuntiveloitus"
-  ],
+    "Ei laskutettava asiakastyö",
+    "Erillislaskutettava kirjanpito",
+    "Myyntireskontratyö",
+    "Ostoreskontratyö",
+    "Palkanlaskenta",
+    "Tilinpäätös",
+    "Veroilmoitus" 
+   ],
   "Black Books Oy": [
     "Graafinen suunnittelu",
     "Markkinointikampanjan suunnittelu",
