@@ -22,19 +22,6 @@ class Window(QtGui.QMainWindow):
         self.set_open()
         layout = QtGui.QVBoxLayout(self.main_widget)
     
-    
-
-        ## Controls
-        #self.control_layout = QtGui.QHBoxLayout()
-        #self.control_box = QtGui.QGroupBox()
-        #self.control_box.setLayout(self.control_layout)
-        #self.control_box.setStyleSheet("""
-        #    margin: 0px;
-        #    padding: 0px;
-        #    border: 0px;
-        #    background: red;
-        #""")
-        #layout.addWidget(self.control_box)
 
         self.status_label = QtGui.QLabel('Valitse asiakas ja tehtava', self)
         self.status_label.setStyleSheet("""
@@ -47,28 +34,6 @@ class Window(QtGui.QMainWindow):
 
         """)
         layout.addWidget(self.status_label)
-
-        #self.info_button = MyPushButton()
-        #self.info_button = QtGui.QPushButton()
-        #self.info_button.setText('ESC')
-        #self.info_button.setStyleSheet("""
-        #
-        #    background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #fefefe, stop: 1 #ececec);
-        #    border-radius: 5px;
-        #    height:30px;
-        #    border: 1px solid #ddd;
-        #    text-align:left;
-        #    padding-top:3px;
-        #    font-size:14px;
-        #    color: #666;
-        #    width:70px;
-        #    float:right;
-        #    max-width:70px;
-        #    text-align: middle;
-
-        #""")
-        #self.control_layout.addWidget(self.info_button)
-        #self.info_button.resize(40, 30)
 
         
         #search
@@ -121,21 +86,17 @@ class Window(QtGui.QMainWindow):
         self.lista.sort()
         self.customer_count = len(self.lista)
 
-        #### Timer
-        self.my_timer = QtCore.QTimer()
-        self.my_timer.timeout.connect(self.tick)
-        self.my_timer.start(1000) #1 second interval
+
 
         #### Internal variables
-        self.current_employer = 0
-        self.current_task = 0
-        print json1_data
+        
+        self.current_selection = 0
+
         self.hommat = json1_data.values()
         self.state = "customer"
         self.buttons = []
         self.taskbuttons = []
-        self.start_time = None
-        self.wait = None
+        
         ## Start with customer list
         self.populate_customers()
         self.populate_tasks()
@@ -173,58 +134,6 @@ class Window(QtGui.QMainWindow):
         if self.state == 'background':
             self.resume()
 
-    def waiting(self):
-        if self.wait == None:
-            return False
-        return self.wait > datetime.datetime.now()
-
-    
-    def setWait(self):
-        self.wait = datetime.datetime.now()  + datetime.timedelta(seconds=1.5)
-
-
-    def keyPressEvent(self, event):
-        print self.state
-        if self.waiting():
-            return
-        
-        if self.state == 'background':
-            self.resume()
-        else:
-            if event.key() == QtCore.Qt.Key_Right:
-                #print 'Right'
-                self.nextValue()
-            elif event.key() == QtCore.Qt.Key_Escape:
-                #print 'Esc'
-                self.back()
-            elif event.key() == QtCore.Qt.Key_Left:
-                #print 'Left'
-                self.previousValue()
-            elif event.key() == QtCore.Qt.Key_Up:
-                #print 'Up'
-                self.previousValue()
-            elif event.key() == QtCore.Qt.Key_Down:
-                #print 'Down'
-                self.nextValue()
-            elif event.key() == QtCore.Qt.Key_Enter:
-                #print 'Enter'
-                self.select()
-            elif event.key() == QtCore.Qt.Key_Return:
-                #print 'Enter'
-                self.select()
-            elif self.start_time != None and event.key() == QtCore.Qt.Key_Space:
-                print 'Space'  
-                self.stop_session()
-            else:
-                self.search.keyPressEvent(event)
-                self.filter()
-                #str = QtCore.QString( QtCore.QChar(event.key()) )
-                #self.search.setText(self.search.getText + str)
-            #else:
-            #    print event.key()
-            
-            #event.accept() #stops propagation
-            #event.ignore() #will propagate
     
     def __icon_activated(self, reason):
         if reason == QtGui.QSystemTrayIcon.Trigger:
@@ -236,53 +145,7 @@ class Window(QtGui.QMainWindow):
         self.sysTray.setVisible(True)
         self.hide()
     
-    def back(self):   
-        if self.state == 'customer':
-            self.search.setText('')
-            self.send_to_background()
-        elif self.state == 'task':
-            self.state = 'customer'
-            self.hide_tasks()
-            self.show_customers()
-            self.search.setText('')
-        self.focus_selected()
-        
-    def select(self):
-        if self.state == 'customer':
-            self.state = 'task'
-            self.hide_customers()
-            self.show_tasks()
-            self.search.setText('')
-        elif self.state == 'task':
-            self.start_session()
-            self.hide_tasks()
-
-            self.search.setText('')
-            self.send_to_background()
-            #self.windowToTray()    
-            #self.showMinimized()
-
-        self.focus_selected()
-        
-    def resume(self):
-        self.state = 'customer'
-        self.mygroupbox.show()
-        self.search.show()
-        self.scroll.show()
-        self.set_open()
-        self.show_customers()
-        self.centerWindow()
-        #self.setWait()
-        
-    def send_to_background(self):
-        self.state = 'background'
-        self.setGeometry(1150, 650, 200, 70)
-        self.mygroupbox.hide()
-        self.search.hide()
-        self.scroll.hide()
-        self.set_closed()
-        self.setWait()
-        self.tick()
+    
 
 
     def set_open(self):
@@ -302,76 +165,7 @@ class Window(QtGui.QMainWindow):
         """); 
 
 
-    def stop_session(self):
-        self.customer_name = ''
-        self.task_name = ''
-        self.start_time = None
-        self.tick()
-        self.search.setText('')
-
-        
-    def start_session(self):
-        self.customer_name = self.lista[self.current_employer]
-        self.task_name = self.hommat[0][self.current_task]
-        self.start_time = datetime.datetime.now()
-        self.tick()
-
-    def filter(self):
-        query = self.search.text().toLower()
-        if self.state == 'customer':
-            first = True
-            for item in self.buttons:
-                item.inactivate()
-                if query in item.getText().lower():
-                    item.setVisible(True)
-                    if first:
-                        item.activate()
-                        first = False
-                        self.current_employer = self.lista.index(item.getText())
-                else:
-                    item.setVisible(False)
-                    
-                    
-        elif self.state == 'task':
-            first = True
-
-            for item in self.taskbuttons:
-                item.inactivate()
-                if query in item.getText().lower():
-                    item.setVisible(True)
-                    if first:
-                        item.activate()
-                        first = False
-                else:
-                    item.setVisible(False)
-        self.focus_selected()
-        
-    def focus_selected(self):
-        if self.state == 'customer':
-            self.scroll_bar.setValue(self.buttons[self.current_employer].pos().y() - 130)
-
-        elif self.state == 'task':
-            self.scroll_bar.setValue(self.buttons[self.current_task].pos().y() - 130)        
-
-    def move(self, steps):
-        print steps
-        if self.state == 'customer':
-            self.buttons[self.current_employer].inactivate()
-            self.current_employer = max(min((self.current_employer + steps), self.customer_count - 1), 0)
-            self.buttons[self.current_employer].activate()
-
-        elif self.state == 'task':
-            self.taskbuttons[self.current_task].inactivate()
-            self.current_task = max(min((self.current_task + steps), len(self.hommat[0]) - 1), 0)
-            self.taskbuttons[self.current_task].activate()
-
-        self.focus_selected()
-            
-    def nextValue(self):
-        self.move(1)     
     
-    def previousValue(self):
-        self.move(-1)
 
 
     def hide_tasks(self):
@@ -385,12 +179,12 @@ class Window(QtGui.QMainWindow):
     def populate_tasks(self):
         print self.hommat
         for item in self.hommat[0]:
-            mypushbutton = MyPushButton()
+            mypushbutton = MyPushButton(self, len(self.taskbuttons))
             mypushbutton.setText(item)
             self.vbox.addWidget(mypushbutton)
             self.taskbuttons.append(mypushbutton)
         
-        self.taskbuttons[self.current_task].activate()
+        self.taskbuttons[0].activate()
 
     def hide_customers(self):
         for item in self.buttons:
@@ -402,22 +196,12 @@ class Window(QtGui.QMainWindow):
             
     def populate_customers(self):
         for item in self.lista:
-            mypushbutton = MyPushButton()
+            mypushbutton = MyPushButton(self, len(self.buttons))
             mypushbutton.setText(item)
             self.vbox.addWidget(mypushbutton)
             self.buttons.append(mypushbutton)
                 
-        self.buttons[self.current_employer].activate()
-
-    def tick(self):
-        if self.start_time != None:
-            seconds = datetime.datetime.now() - self.start_time
-            m, s = divmod(seconds.total_seconds(), 60)
-            h, m = divmod(m, 60)
-            time = "%d:%02d:%02d" % (h, m, s)
-            self.status_label.setText(self.customer_name + ': ' + time+ "\n" + self.task_name )
-        else:
-            self.status_label.setText("Valitse asiakas ja tehtava")
+        self.buttons[0].activate()
 
 
 class SearchField(QtGui.QLineEdit):
@@ -433,37 +217,29 @@ class MyScrollArea(QtGui.QScrollArea):
     def keyPressEvent(self, event):
         self.window.keyPressEvent(event)
     
-    def wheelEvent(self, event):
-        self.window.move(-int(event.delta()/8))
-        event.ignore()
-        
-        
-
-class MyPushButton(QtGui.QPushButton):
-    def __init__(self):
-        QtGui.QPushButton.__init__(self)
-        #self.setStyleSheet("background-color: green;")
-        self.inactivate()
-        
-    def getText(self):
-        return self.text
     
-    def setText(self, text):
-        self.text = text
-        return QtGui.QPushButton.setText(self, text)
-        
-    def activate(self):
-        self.setStyleSheet("""
-            background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 rgb(234, 156, 0), stop: 1 rgb(221, 138, 0));
-            border-radius: 5px;
-            height:30px;
-            border: 1px solid rgb(183, 121, 0);
-            text-align:left;
-            padding-left:30px;
-            padding-top:3px;
-            font-size:14px;
-            color: white;
-        """)
+    
+class MyPushButton(QtGui.QPushButton):
+    def __init__(self, window, order):
+        QtGui.QPushButton.__init__(self)
+        self.inactivate()
+        self.window = window
+        self.order = order
+    
+    def enterEvent(self, *args, **kwargs):
+        self.activate()
+        self.window.selection = self.order
+        try:
+            return QtGui.QPushButton.enterEvent(self, *args, **kwargs)
+        except TypeError:
+            pass
+
+    def leaveEvent(self, *args, **kwargs):
+        self.inactivate()
+        try:
+            return QtGui.QPushButton.leaveEvent(self, *args, **kwargs)
+        except TypeError:
+            pass
 
     def inactivate(self):
         self.setStyleSheet("""
@@ -476,6 +252,19 @@ class MyPushButton(QtGui.QPushButton):
             padding-top:3px;
             font-size:14px;
             color: #666;
+        """)
+        
+    def activate(self):
+        self.setStyleSheet("""
+            background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 rgb(234, 156, 0), stop: 1 rgb(221, 138, 0));
+            border-radius: 5px;
+            height:30px;
+            border: 1px solid rgb(183, 121, 0);
+            text-align:left;
+            padding-left:30px;
+            padding-top:3px;
+            font-size:14px;
+            color: white;
         """)
 
 
