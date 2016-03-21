@@ -2,7 +2,6 @@ from PyQt4 import QtGui, QtCore
 import sys
 
 import json
-import datetime
 
 
 
@@ -16,8 +15,7 @@ class Window(QtGui.QMainWindow):
         self.main_widget = QtGui.QWidget(self)
         self.main_widget.setObjectName("main")
         self.setMinimumSize(1,1)
-        #self.grid = QtGui.QGridLayout(self.main_widget)
-        #self.main_widget.resize(800, 500)
+
         self.setCentralWidget(self.main_widget)
         self.set_open()
         layout = QtGui.QVBoxLayout(self.main_widget)
@@ -33,11 +31,22 @@ class Window(QtGui.QMainWindow):
             max-height: 40px;
 
         """)
-        layout.addWidget(self.status_label)
+        
+        panel = QtGui.QHBoxLayout()
+        panel.addWidget(self.status_label)
+        
+        backbutton = BackButton()
+        backbutton.setWindow(self)
+        panel.addWidget(backbutton);
+        
+        
+        layout.addLayout(panel)
 
         
+        
         #search
-        self.search = SearchField('')
+        self.search = SearchField()
+        self.search.setWindow(self)
         self.search.setStyleSheet("""
             padding:5px;
             text-align:middle;
@@ -54,8 +63,8 @@ class Window(QtGui.QMainWindow):
         self.mygroupbox = QtGui.QGroupBox()
         self.mygroupbox.setLayout(self.vbox)
         
-        self.scroll = MyScrollArea(self)
-        self.scroll.setWindow(self)
+        self.scroll = ScrollArea()
+        
         self.scroll.setWidget(self.mygroupbox)
         self.scroll.setWidgetResizable(True)
         self.scroll.setStyleSheet("""
@@ -86,14 +95,10 @@ class Window(QtGui.QMainWindow):
         self.lista.sort()
         self.customer_count = len(self.lista)
 
-
-
         #### Internal variables
         
-        self.current_selection = 0
-
         self.hommat = json1_data.values()
-        self.state = "customer"
+
         self.buttons = []
         self.taskbuttons = []
         
@@ -102,6 +107,9 @@ class Window(QtGui.QMainWindow):
         self.populate_tasks()
         self.hide_tasks()
         
+        #initialization
+        self.current_button = None
+        self.state = 'customer'
         
         self.initUI()
         
@@ -127,13 +135,17 @@ class Window(QtGui.QMainWindow):
         self.raise_()
         self.show()  
   
-  
+
     
     ### Listeners
-    def mousePressEvent(self, event):
-        if self.state == 'background':
-            self.resume()
-
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Escape and self.state == 'tasks':
+            try:
+                self.show_customers()
+                return QtGui.QMainWindow.keyPressEvent(self, event)
+            except:
+                pass
+        
     
     def __icon_activated(self, reason):
         if reason == QtGui.QSystemTrayIcon.Trigger:
@@ -177,14 +189,7 @@ class Window(QtGui.QMainWindow):
             item.setVisible(True)
 
     def populate_tasks(self):
-        print self.hommat
-        for item in self.hommat[0]:
-            mypushbutton = MyPushButton(self, len(self.taskbuttons))
-            mypushbutton.setText(item)
-            self.vbox.addWidget(mypushbutton)
-            self.taskbuttons.append(mypushbutton)
-        
-        self.taskbuttons[0].activate()
+        return
 
     def hide_customers(self):
         for item in self.buttons:
@@ -196,48 +201,91 @@ class Window(QtGui.QMainWindow):
             
     def populate_customers(self):
         for item in self.lista:
-            mypushbutton = MyPushButton(self, len(self.buttons))
+            mypushbutton = PushButton()
             mypushbutton.setText(item)
             self.vbox.addWidget(mypushbutton)
             self.buttons.append(mypushbutton)
-                
-        self.buttons[0].activate()
+            mypushbutton.setWindow(self)
 
 
 class SearchField(QtGui.QLineEdit):
+    def __init__(self):
+        QtGui.QLineEdit.__init__(self)
+        self.setText("Not implemented!")
+        self.setDisabled(True)
+
+    
+    
     def setWindow(self, window):
         self.window = window
- 
 
-class MyScrollArea(QtGui.QScrollArea):
+
+
+
+class ScrollArea(QtGui.QScrollArea):
+    def __init__(self):
+        QtGui.QScrollArea.__init__(self)
+   
+   
+   
+class BackButton(QtGui.QPushButton):
+    def __init__(self):
+        QtGui.QPushButton.__init__(self)
+        self.setText("Back")
+        self.setStyleSheet("""
+            background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #fefefe, stop: 1 #ececec);
+            border-radius: 5px;
+            height:30px;
+            border: 1px solid #ddd;
+            text-align:left;
+            padding-left:30px;
+            padding-top:3px;
+            font-size:14px;
+            color: #666;
+        """)
     
+    def mousePressEvent(self, event):
+        if self.window.state == 'tasks':
+            try:
+                self.window.show_customers()
+                return QtGui.QLineEdit.mousePressEvent(self, event)
+            except TypeError:
+                pass
+    
+    def setWindow(self, window):
+        self.window = window
+    
+#END class BackButton
+    
+class PushButton(QtGui.QPushButton):
+    def __init__(self):
+        QtGui.QPushButton.__init__(self)
+        self.inactivate()
+
+
     def setWindow(self, window):
         self.window = window
         
-    def keyPressEvent(self, event):
-        self.window.keyPressEvent(event)
-    
-    
-    
-class MyPushButton(QtGui.QPushButton):
-    def __init__(self, window, order):
-        QtGui.QPushButton.__init__(self)
-        self.inactivate()
-        self.window = window
-        self.order = order
-    
-    def enterEvent(self, *args, **kwargs):
+        
+    def enterEvent(self, event):
         self.activate()
-        self.window.selection = self.order
         try:
-            return QtGui.QPushButton.enterEvent(self, *args, **kwargs)
+            return QtGui.QPushButton.enterEvent(self, event)
         except TypeError:
             pass
 
-    def leaveEvent(self, *args, **kwargs):
+    def leaveEvent(self, event):
         self.inactivate()
         try:
-            return QtGui.QPushButton.leaveEvent(self, *args, **kwargs)
+            return QtGui.QPushButton.leaveEvent(self, event)
+        except TypeError:
+            pass
+
+    def mousePressEvent(self, event):
+        self.window.hide_customers()
+        self.window.state = 'tasks'
+        try:
+            return QtGui.QPushButton.mousePressEvent(self, event)
         except TypeError:
             pass
 
@@ -267,7 +315,7 @@ class MyPushButton(QtGui.QPushButton):
             color: white;
         """)
 
-
+#END class PushButton
 
 app = QtGui.QApplication(sys.argv)
 window = Window()
