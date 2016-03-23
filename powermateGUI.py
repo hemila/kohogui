@@ -177,7 +177,8 @@ class Window(QtGui.QMainWindow):
         """); 
 
 
-    
+    def filterButtons(self, searchQuery):
+        return
 
 
     def hide_tasks(self):
@@ -211,22 +212,23 @@ class Window(QtGui.QMainWindow):
 class SearchField(QtGui.QLineEdit):
     def __init__(self):
         QtGui.QLineEdit.__init__(self)
-        self.setText("Not implemented!")
-        self.setDisabled(True)
-
+        self.textEdited.connect(self.search)
     
     
     def setWindow(self, window):
         self.window = window
 
-
-
-
+    def search(self, string):
+        print string
+   
+    
+   
+   
 class ScrollArea(QtGui.QScrollArea):
     def __init__(self):
         QtGui.QScrollArea.__init__(self)
    
-   
+    
    
 class BackButton(QtGui.QPushButton):
     def __init__(self):
