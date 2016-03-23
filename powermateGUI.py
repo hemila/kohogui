@@ -178,7 +178,13 @@ class Window(QtGui.QMainWindow):
 
 
     def filterButtons(self, searchQuery):
-        return
+        if len(searchQuery) == 0:
+            return
+        
+        for customer in self.buttons:
+            cust = str(customer.text().toUtf8())
+            if not cust.find(searchQuery) == -1 :
+                print cust
 
 
     def hide_tasks(self):
@@ -214,12 +220,13 @@ class SearchField(QtGui.QLineEdit):
         QtGui.QLineEdit.__init__(self)
         self.textEdited.connect(self.search)
     
-    
+    def search(self, string):
+        self.window.filterButtons(string)
+        
     def setWindow(self, window):
         self.window = window
 
-    def search(self, string):
-        print string
+    
    
     
    
