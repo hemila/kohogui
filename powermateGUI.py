@@ -101,6 +101,7 @@ class Window(QtGui.QMainWindow):
 
         self.buttons = []
         self.taskbuttons = []
+        self.products = ['tuote1', 'tuote2', 'tuote3', 'tuote4', 'tuote5', 'tuote6']
         
         ## Start with customer list
         self.populate_customers()
@@ -127,13 +128,7 @@ class Window(QtGui.QMainWindow):
         file_menu.addAction(exit_action)     
         
         self.show()
-        #self.send_to_background()
-
-        #focus and bring front
-        self.setFocus(True)
-        self.activateWindow()
-        self.raise_()
-        self.show()  
+        
   
 
     
